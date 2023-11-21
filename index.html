@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Graph</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <style>
+        .non-selectable {
+            -webkit-user-select: none; /* Safari */
+            -moz-user-select: none; /* Firefox */
+            -ms-user-select: none; /* IE10+/Edge */
+            user-select: none; /* Standard */
+        }
+    </style>
+</head>
+<body style="background-color: #000; padding: 3rem">
+<div style="display: flex; justify-content: center; gap: 2rem;">
+    <input style="width: 90%; background-color: #1b1b1b; border: #222; color: #fff; padding: 1rem;" type="text"
+           id="nodes" value="[(a,b,1), (a,c,2)]">
+    <button style="width: 5%; background-color: #1b1b1b; border: #222; color: #fff;" onclick="draw()">Draw</button>
+</div>
+<div style="display: flex; justify-content: center; width: 100%;">
+    <svg width="1500" height="700" style="outline: #1b1b1b solid"></svg>
+</div>
+<script>
+    function draw() {
+        var svg = d3.select("svg");
+        svg.selectAll("*").remove();
+
+        var width = +svg.attr("width"),
+            height = +svg.attr("height");
+
+        var nodes = [],
+            links = [];
+
+        var input = document.getElementById('nodes').value;
+        var pairs = input.match(/\((.*?)\)/g);
+
+        for (var i = 0; i < pairs.length; i++) {
+            var pair = pairs[i].replace(/[()]/g, '').split(',');
+            var source = pair[0].trim();
+            var target = pair[1].trim();
+            var weight = pair[2] ? pair[2].trim() : 1;
+
+            if (!nodes.find(node => node.id === source)) {
+                nodes.push({id: source});
+            }
+
+            if (!nodes.find(node => node.id === target)) {
+                nodes.push({id: target});
+            }
+
+            links.push({source: source, target: target, weight: weight});
+        }
+
+        var simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links).id(function (d) {
+                return d.id;
+            }))
+            .force("charge", d3.forceManyBody().strength(-1000))
+            .force("center", d3.forceCenter(width / 2, height / 2));
+
+        var link = svg.append("g")
+            .attr("stroke", "#999")
+            .attr("stroke-opacity", 0.6)
+            .selectAll("line")
+            .data(links)
+            .enter().append("line")
+            .style("stroke-width", function (d) {
+                return Math.sqrt(d.weight);
+            });
+
+        var linkText = svg.append("g")
+            .attr("class", "link-labels")
+            .selectAll("text")
+            .data(links)
+            .enter().append("text")
+            .attr("font-size", 24)
+            .attr("fill", "#aaa")
+            .text(function (d) {
+                return d.weight;
+            });
+
+        var node = svg.append("g")
+            .attr("stroke", "#fff")
+            .attr("stroke-width", 1.5)
+            .selectAll("circle")
+            .data(nodes)
+            .enter().append("circle")
+            .attr("r", 20)
+            .attr("fill", "#b05c07")
+            .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended));
+
+        node.append("title")
+            .text(function (d) {
+                return d.id;
+            });
+
+        var labels = svg.append("g")
+            .attr("class", "labels")
+            .selectAll("text")
+            .data(nodes)
+            .enter().append("text")
+            .attr("class", "label")
+            .attr("class", "non-selectable")
+            .attr("font-size", 24)
+            .attr("text-anchor", "middle")
+            .attr("dominant-baseline", "central")
+            .text(function (d) {
+                return d.id;
+            });
+
+        simulation
+            .nodes(nodes)
+            .on("tick", ticked);
+
+        simulation.force("link")
+            .links(links);
+
+        function ticked() {
+            link
+                .attr("x1", function (d) {
+                    return d.source.x;
+                })
+                .attr("y1", function (d) {
+                    return d.source.y;
+                })
+                .attr("x2", function (d) {
+                    return d.target.x;
+                })
+                .attr("y2", function (d) {
+                    return d.target.y;
+                });
+
+            linkText
+                .attr("x", function (d) {
+                    return (d.source.x + d.target.x) / 2;
+                })
+                .attr("y", function (d) {
+                    return (d.source.y + d.target.y) / 2;
+                });
+
+            node
+                .attr("cx", function (d) {
+                    return d.x;
+                })
+                .attr("cy", function (d) {
+                    return d.y;
+                });
+
+            labels
+                .attr("x", function (d) {
+                    return d.x;
+                })
+                .attr("y", function (d) {
+                    return d.y;
+                });
+        }
+
+        function dragstarted(d) {
+            if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(d) {
+            d.fx = d3.event.x;
+            d.fy = d3.event.y;
+        }
+
+        function dragended(d) {
+            if (!d3.event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+    }
+</script>
+</body>
+</html>
