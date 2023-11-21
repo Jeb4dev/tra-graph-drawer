@@ -15,7 +15,8 @@
 <body style="background-color: #000; padding: 3rem">
 <div style="display: flex; justify-content: center; gap: 2rem;">
     <input style="width: 90%; background-color: #1b1b1b; border: #222; color: #fff; padding: 1rem;" type="text"
-           id="nodes" value="[(a,b,1), (a,c,2)]">
+           id="nodes"
+           value="[(a, k), (a, o), (b, c), (b, i), (c, d), (c, f), (c, o), (e, f), (e, g), (e, j), (f, i), (f, n), (g, m), (h, l), (h, o), (j, m), (k, n) ]">
     <button style="width: 5%; background-color: #1b1b1b; border: #222; color: #fff;" onclick="draw()">Draw</button>
 </div>
 <div style="display: flex; justify-content: center; width: 100%;">
@@ -56,7 +57,7 @@
             .force("link", d3.forceLink(links).id(function (d) {
                 return d.id;
             }))
-            .force("charge", d3.forceManyBody().strength(-1000))
+            .force("charge", d3.forceManyBody().strength(-5000/pairs.length+1))
             .force("center", d3.forceCenter(width / 2, height / 2));
 
         var link = svg.append("g")
@@ -176,6 +177,7 @@
             d.fy = null;
         }
     }
+    draw();
 </script>
 </body>
 </html>
